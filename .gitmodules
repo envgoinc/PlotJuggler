@@ -1,0 +1,3 @@
+[submodule "plotjuggler_plugins/plotjuggler-CAN-dbs"]
+	path = plotjuggler_plugins/plotjuggler-CAN-dbs
+	url = https://github.com/envgoinc/plotjuggler-CAN-dbs
