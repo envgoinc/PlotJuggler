@@ -31,28 +31,36 @@
 #include "PlotJuggler/util/delayed_callback.hpp"
 #include "transforms/custom_function.h"
 #include "transforms/function_editor.h"
+#include "plugin_manager.h"
+#include "toast_manager.h"
 
 #include "ui_mainwindow.h"
+
+class QVBoxLayout;
 
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
 
 public:
-  explicit MainWindow(const QCommandLineParser& commandline_parser,
-                      QWidget* parent = nullptr);
+  explicit MainWindow(const QCommandLineParser& commandline_parser, QWidget* parent = nullptr);
 
   ~MainWindow();
 
   bool loadLayoutFromFile(QString filename);
   bool loadDataFromFiles(QStringList filenames);
-  std::unordered_set<std::string> loadDataFromFile(const FileLoadInfo& info);
+  std::unordered_set<std::string> loadDataFromFile(const FileLoadInfo& info, bool merge_files);
 
   void stopStreamingPlugin();
   void startStreamingPlugin(QString streamer_name);
   void enableStreamingNotificationsButton(bool enabled);
 
   void setStatusBarMessage(QString message);
+
+  /// Show a toast notification in the bottom-right corner
+  /// @param message The text/HTML to display (supports rich text with clickable links)
+  /// @param icon Optional 56x56 icon to show on the left
+  void showToast(const QString& message, const QPixmap& icon = QPixmap());
 
 public slots:
 
@@ -123,11 +131,6 @@ private:
 
   TransformsMap _transform_functions;
 
-  std::map<QString, DataLoaderPtr> _data_loader;
-  std::map<QString, StatePublisherPtr> _state_publisher;
-  std::map<QString, DataStreamerPtr> _data_streamer;
-  std::map<QString, ToolboxPluginPtr> _toolboxes;
-
   QString _default_streamer;
 
   ParserFactories _parser_factories;
@@ -144,9 +147,7 @@ private:
   bool _autostart_publishers;
 
   double _tracker_time;
-
-  QStringList _enabled_plugins;
-  QStringList _disabled_plugins;
+  std::optional<double> _reference_tracker_time;
 
   std::vector<FileLoadInfo> _loaded_datafiles_history;
   std::vector<FileLoadInfo> _loaded_datafiles_previous;
@@ -157,6 +158,7 @@ private:
   MonitoredValue _time_offset;
 
   QTimer* _replot_timer;
+  int _curvelist_resync_counter = 0;
   QTimer* _publish_timer;
   PJ::DelayedCallback _tracker_delay;
 
@@ -181,8 +183,34 @@ private:
 
   QString _skin_path;
 
+  // Toast notification manager
+  ToastManager* _toast_manager;
+
   void initializeActions();
-  QStringList initializePlugins(QString subdir_name);
+  void initializePlugins();
+
+  PluginManager _plugin_manager;
+
+  const std::map<QString, DataLoaderPtr>& dataLoaders() const
+  {
+    return _plugin_manager.dataLoaders();
+  }
+  const std::map<QString, StatePublisherPtr>& statePublishers() const
+  {
+    return _plugin_manager.statePublishers();
+  }
+  const std::map<QString, DataStreamerPtr>& dataStreamers() const
+  {
+    return _plugin_manager.dataStreamers();
+  }
+  const std::map<QString, ToolboxPluginPtr>& toolboxes() const
+  {
+    return _plugin_manager.toolboxes();
+  }
+  const std::map<QString, ParserFactoryPtr>& parserFactories() const
+  {
+    return _plugin_manager.parserFactories();
+  }
 
   void forEachWidget(std::function<void(PlotWidget*, PlotDocker*, int)> op);
   void forEachWidget(std::function<void(PlotWidget*)> op);
@@ -289,6 +317,12 @@ private slots:
   void on_buttonReloadData_clicked();
 
   void on_buttonCloseStatus_clicked();
+
+  void on_buttonReferencePoint_toggled(bool checked);
+
+  void on_buttonShowpoint_toggled(bool checked);
+
+  void on_buttonDots_toggled(bool checked);
 
 private:
   QStringList readAllCurvesFromXML(QDomElement root_node);

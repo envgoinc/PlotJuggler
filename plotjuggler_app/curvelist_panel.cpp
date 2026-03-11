@@ -169,8 +169,7 @@ void CurveListPanel::updateAppearance()
         if (it != _plot_data.groups.end())
         {
           QVariant color_var = it->second->attribute(PJ::TEXT_COLOR);
-          QColor text_color =
-              color_var.isValid() ? color_var.value<QColor>() : default_color;
+          QColor text_color = color_var.isValid() ? color_var.value<QColor>() : default_color;
 
           QVariant style_var = it->second->attribute(PJ::ITALIC_FONTS);
           bool italic = (style_var.isValid() && style_var.value<bool>());
@@ -191,8 +190,7 @@ void CurveListPanel::updateAppearance()
     auto ChangeLeavesVisitor = [&](QTreeWidgetItem* cell) {
       if (cell->childCount() == 0)
       {
-        const std::string& curve_name =
-            cell->data(0, CustomRoles::Name).toString().toStdString();
+        const std::string& curve_name = cell->data(0, CustomRoles::Name).toString().toStdString();
 
         QVariant text_color;
 
@@ -250,6 +248,7 @@ void CurveListPanel::refreshColumns()
 void CurveListPanel::updateFilter()
 {
   on_lineEditFilter_textChanged(ui->lineEditFilter->text());
+  on_lineEditCustomFilter_textChanged(ui->lineEditCustomFilter->text());
 }
 
 void CurveListPanel::keyPressEvent(QKeyEvent* event)
@@ -298,7 +297,9 @@ void CurveListPanel::refreshValues()
         idx--;
       }
       if (num_text[idx] == '.')
+      {
         num_text[idx] = ' ';
+      }
     }
     return num_text + " ";
   };
@@ -322,18 +323,17 @@ void CurveListPanel::refreshValues()
       if (it != _plot_data.strings.end())
       {
         auto& plot_data = it->second;
-        auto val = plot_data.getYfromX(_tracker_time);
-        if (val)
+        auto str = plot_data.getStringFromX(_tracker_time);
+        if (str)
         {
-          auto str_view = val.value();
-          char last_byte = str_view.data()[str_view.size() - 1];
+          char last_byte = str->data()[str->size() - 1];
           if (last_byte == '\0')
           {
-            return QString::fromLocal8Bit(str_view.data(), str_view.size() - 1);
+            return QString::fromLocal8Bit(str->data(), str->size() - 1);
           }
           else
           {
-            return QString::fromLocal8Bit(str_view.data(), str_view.size());
+            return QString::fromLocal8Bit(str->data(), str->size());
           }
         }
       }
@@ -352,11 +352,7 @@ void CurveListPanel::refreshValues()
       {
         auto rect = cell->treeWidget()->visualItemRect(cell);
 
-        if (rect.bottom() < 0 || cell->isHidden())
-        {
-          return;
-        }
-        if (rect.top() > vertical_height)
+        if (rect.bottom() < 0 || cell->isHidden() || rect.top() > vertical_height)
         {
           return;
         }
@@ -425,18 +421,22 @@ QString CurveListPanel::getTreeName(QString name)
 
 void CurveListPanel::on_lineEditFilter_textChanged(const QString& search_string)
 {
-  bool updated = _tree_view->applyVisibilityFilter(search_string) |
-                 _custom_view->applyVisibilityFilter(search_string);
+  bool updated = _tree_view->applyVisibilityFilter(search_string);
 
-  std::pair<int, int> hc_1 = _tree_view->hiddenItemsCount();
-  std::pair<int, int> hc_2 = _custom_view->hiddenItemsCount();
-
-  int item_count = hc_1.second + hc_2.second;
-  int visible_count = item_count - hc_1.first - hc_2.first;
+  const auto& [hidden_count, item_count] = _tree_view->hiddenItemsCount();
+  const int visible_count = item_count - hidden_count;
 
   ui->labelNumberDisplayed->setText(QString::number(visible_count) + QString(" of ") +
                                     QString::number(item_count));
   if (updated)
+  {
+    emit hiddenItemsChanged();
+  }
+}
+
+void CurveListPanel::on_lineEditCustomFilter_textChanged(const QString& search_string)
+{
+  if (_custom_view->applyVisibilityFilter(search_string))
   {
     emit hiddenItemsChanged();
   }
@@ -482,11 +482,10 @@ void CurveListPanel::on_buttonAddCustom_clicked()
   }
 
   emit createMathPlot(suggested_name);
-  on_lineEditFilter_textChanged(ui->lineEditFilter->text());
+  updateFilter();
 }
 
-void CurveListPanel::onCustomSelectionChanged(const QItemSelection&,
-                                              const QItemSelection&)
+void CurveListPanel::onCustomSelectionChanged(const QItemSelection&, const QItemSelection&)
 {
   auto selected = _custom_view->getSelectedNames();
 
@@ -582,12 +581,10 @@ void CurveListPanel::on_pushButtonTrash_clicked(bool)
   QSettings settings;
   QString theme = settings.value("StyleSheet::theme", "light").toString();
 
-  QPushButton* buttonAll =
-      msgBox.addButton(tr("Delete All"), QMessageBox::DestructiveRole);
+  QPushButton* buttonAll = msgBox.addButton(tr("Delete All"), QMessageBox::DestructiveRole);
   buttonAll->setIcon(LoadSvg(":/resources/svg/clear.svg"));
 
-  QPushButton* buttonPoints =
-      msgBox.addButton(tr("Delete Points"), QMessageBox::DestructiveRole);
+  QPushButton* buttonPoints = msgBox.addButton(tr("Delete Points"), QMessageBox::DestructiveRole);
   buttonPoints->setIcon(LoadSvg(":/resources/svg/point_chart.svg"));
 
   msgBox.addButton(QMessageBox::Cancel);

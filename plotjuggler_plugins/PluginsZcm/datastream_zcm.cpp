@@ -88,8 +88,7 @@ bool DataStreamZcm::start(QStringList*)
     }
     catch (std::exception& ex)
     {
-      QMessageBox::warning(nullptr, "Error",
-                           tr("Exception from zcm::ZCM() :\n%1").arg(ex.what()));
+      QMessageBox::warning(nullptr, "Error", tr("Exception from zcm::ZCM() :\n%1").arg(ex.what()));
       return false;
     }
     if (!_zcm->good())
@@ -122,8 +121,7 @@ bool DataStreamZcm::start(QStringList*)
     {
       _zcm->unsubscribe(_subs);
     }
-    _subs =
-        _zcm->subscribe(_subscribe_string.toStdString(), &DataStreamZcm::handler, this);
+    _subs = _zcm->subscribe(_subscribe_string.toStdString(), &DataStreamZcm::handler, this);
     if (!_subs)
     {
       QMessageBox::warning(nullptr, "Error", "Failed to subscribe");
@@ -185,8 +183,8 @@ bool DataStreamZcm::xmlLoadState(const QDomElement& parent_element)
   return true;
 }
 
-void DataStreamZcm::processData(const string& name, zcm_field_type_t type,
-                                const void* data, void* usr)
+void DataStreamZcm::processData(const string& name, zcm_field_type_t type, const void* data,
+                                void* usr)
 {
   DataStreamZcm* me = (DataStreamZcm*)usr;
   switch (type)
@@ -225,17 +223,18 @@ void DataStreamZcm::processData(const string& name, zcm_field_type_t type,
 
 void DataStreamZcm::handler(const zcm::ReceiveBuffer* rbuf, const string& channel)
 {
-  zcm::Introspection::processEncodedType(channel, rbuf->data, rbuf->data_size, "/",
-                                         *_types.get(), processData, this);
+  zcm::Introspection::processEncodedType(channel, rbuf->data, rbuf->data_size, "/", *_types.get(),
+                                         processData, this);
   {
     std::lock_guard<std::mutex> lock(mutex());
+    auto group = dataMap().getOrCreateGroup(channel);
 
     for (auto& n : _numerics)
     {
       auto itr = dataMap().numeric.find(n.first);
       if (itr == dataMap().numeric.end())
       {
-        itr = dataMap().addNumeric(n.first);
+        itr = dataMap().addNumeric(n.first, group);
       }
       itr->second.pushBack({ double(rbuf->recv_utime) / 1e6, n.second });
     }
@@ -244,7 +243,7 @@ void DataStreamZcm::handler(const zcm::ReceiveBuffer* rbuf, const string& channe
       auto itr = dataMap().strings.find(s.first);
       if (itr == dataMap().strings.end())
       {
-        itr = dataMap().addStringSeries(s.first);
+        itr = dataMap().addStringSeries(s.first, group);
       }
       itr->second.pushBack({ double(rbuf->recv_utime) / 1e6, s.second });
     }
@@ -261,8 +260,7 @@ void DataStreamZcm::on_pushButtonUrl_clicked()
   QString url = getenv("ZCM_DEFAULT_URL");
   if (url.isEmpty())
   {
-    QMessageBox::warning(nullptr, "Error",
-                         "Environment variable ZCM_DEFAULT_URL not set");
+    QMessageBox::warning(nullptr, "Error", "Environment variable ZCM_DEFAULT_URL not set");
   }
   else
   {

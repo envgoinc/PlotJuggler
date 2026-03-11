@@ -110,20 +110,26 @@ static int processInputLog(const string& logpath,
 
       evt = inlog.readNextEvent();
       if (evt == nullptr)
+      {
         break;
+      }
 
       processEvent(evt);
     }
     if (verbose)
     {
       if (lastPrintPercent != 100 && !interrupted)
+      {
         cout << "\r"
              << "Percent Complete: 100" << flush;
+      }
       cout << endl;
     }
 
     if (interrupted)
+    {
       progress_dialog.cancel();
+    }
   };
 
   processLog(processEvent);
@@ -138,9 +144,7 @@ bool DataLoadZcm::refreshChannels(const string& filepath)
   _all_channels.clear();
   _all_channels_filepath = filepath;
 
-  auto processEvent = [&](const zcm::LogEvent* evt) {
-    _all_channels.insert(evt->channel);
-  };
+  auto processEvent = [&](const zcm::LogEvent* evt) { _all_channels.insert(evt->channel); };
 
   return processInputLog(filepath, processEvent) == 0;
 }
@@ -203,8 +207,7 @@ struct ProcessUsr
   vector<pair<string, double>>& numerics;
   vector<pair<string, string>>& strings;
 };
-static void processData(const string& name, zcm_field_type_t type, const void* data,
-                        void* usr)
+static void processData(const string& name, zcm_field_type_t type, const void* data, void* usr)
 {
   ProcessUsr* v = (ProcessUsr*)usr;
   switch (type)
@@ -275,29 +278,37 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
       return;
     }
 
+    auto group = plot_data.getOrCreateGroup(evt->channel);
+
     if (evt->datalen == 0)
     {
       auto itr = plot_data.numeric.find(evt->channel);
       if (itr == plot_data.numeric.end())
-        itr = plot_data.addNumeric(evt->channel);
+      {
+        itr = plot_data.addNumeric(evt->channel, group);
+      }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, 0 });
       return;
     }
 
-    zcm::Introspection::processEncodedType(evt->channel, evt->data, evt->datalen, "/",
-                                           types, processData, &usr);
+    zcm::Introspection::processEncodedType(evt->channel, evt->data, evt->datalen, "/", types,
+                                           processData, &usr);
     for (auto& n : usr.numerics)
     {
       auto itr = plot_data.numeric.find(n.first);
       if (itr == plot_data.numeric.end())
-        itr = plot_data.addNumeric(n.first);
+      {
+        itr = plot_data.addNumeric(n.first, group);
+      }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, n.second });
     }
     for (auto& s : usr.strings)
     {
       auto itr = plot_data.strings.find(s.first);
       if (itr == plot_data.strings.end())
-        itr = plot_data.addStringSeries(s.first);
+      {
+        itr = plot_data.addStringSeries(s.first, group);
+      }
       itr->second.pushBack({ (double)evt->timestamp / 1e6, s.second });
     }
 
@@ -306,7 +317,9 @@ bool DataLoadZcm::readDataFromFile(FileLoadInfo* info, PlotDataMapRef& plot_data
   };
 
   if (processInputLog(filepath, processEvent) != 0)
+  {
     return false;
+  }
 
   return true;
 }
@@ -377,7 +390,9 @@ bool DataLoadZcm::xmlLoadState(const QDomElement& parent_element)
 
     QStringList selected_channels;
     for (auto& c : _selected_channels)
+    {
       selected_channels.push_back(QString::fromStdString(c));
+    }
 
     QSettings settings;
     settings.setValue("DataLoadZcm.selected_channels", selected_channels);

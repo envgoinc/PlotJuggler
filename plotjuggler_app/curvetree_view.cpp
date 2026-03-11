@@ -23,13 +23,11 @@ public:
 
   bool operator<(const QTreeWidgetItem& other) const
   {
-    return doj::alphanum_impl(this->text(0).toLocal8Bit(), other.text(0).toLocal8Bit()) <
-           0;
+    return doj::alphanum_impl(this->text(0).toLocal8Bit(), other.text(0).toLocal8Bit()) < 0;
   }
 };
 
-CurveTreeView::CurveTreeView(CurveListPanel* parent)
-  : QTreeWidget(parent), CurvesView(parent)
+CurveTreeView::CurveTreeView(CurveListPanel* parent) : QTreeWidget(parent), CurvesView(parent)
 {
   setColumnCount(2);
   setEditTriggers(NoEditTriggers);
@@ -48,13 +46,12 @@ CurveTreeView::CurveTreeView(CurveListPanel* parent)
   header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
 
-  connect(this, &QTreeWidget::itemDoubleClicked, this,
-          [this](QTreeWidgetItem* item, int column) {
-            if (column == 0)
-            {
-              expandChildren(!item->isExpanded(), item);
-            }
-          });
+  connect(this, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item, int column) {
+    if (column == 0)
+    {
+      expandChildren(!item->isExpanded(), item);
+    }
+  });
 
   connect(selectionModel(), &QItemSelectionModel::selectionChanged, this, [this]() {
     if (getSelectedNames().empty())
@@ -119,9 +116,24 @@ void CurveTreeView::addItem(const QString& group_name, const QString& tree_name,
     return;
   }
 
-  bool prefix_is_group = tree_name.startsWith(group_name);
   bool hasGroup = !group_name.isEmpty();
   auto group_parts = group_name.split('/', PJ::SkipEmptyParts);
+
+  // Check if tree_name already starts with the group prefix by comparing
+  // the split parts (avoids leading-slash mismatch between the two strings).
+  bool prefix_is_group = false;
+  if (hasGroup && group_parts.size() <= parts.size())
+  {
+    prefix_is_group = true;
+    for (int i = 0; i < group_parts.size(); i++)
+    {
+      if (parts[i] != group_parts[i])
+      {
+        prefix_is_group = false;
+        break;
+      }
+    }
+  }
 
   if (hasGroup && !prefix_is_group)
   {

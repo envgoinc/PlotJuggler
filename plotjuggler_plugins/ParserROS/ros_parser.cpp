@@ -1,6 +1,6 @@
 #include "ros_parser.h"
 #include "data_tamer_parser/data_tamer_parser.hpp"
-#include "PlotJuggler/contrib/fmt/core.h"
+#include "fmt/core.h"
 #include <queue>
 #include <algorithm>
 #include <unordered_map>
@@ -25,8 +25,7 @@ ParserROS::ParserROS(const std::string& topic_name, const std::string& type_name
   , _deserializer(deserializer)
   , _topic(topic_name)
 {
-  auto policy =
-      clampLargeArray() ? Parser::KEEP_LARGE_ARRAYS : Parser::DISCARD_LARGE_ARRAYS;
+  auto policy = clampLargeArray() ? Parser::KEEP_LARGE_ARRAYS : Parser::DISCARD_LARGE_ARRAYS;
 
   _parser.setMaxArrayPolicy(policy, maxArraySize());
 
@@ -109,8 +108,7 @@ bool ParserROS::parseMessage(const PJ::MessageRef serialized_msg, double& timest
 {
   if (_customized_parser)
   {
-    _deserializer->init(
-        Span<const uint8_t>(serialized_msg.data(), serialized_msg.size()));
+    _deserializer->init(Span<const uint8_t>(serialized_msg.data(), serialized_msg.size()));
     _customized_parser(_topic_name, timestamp);
     return true;
   }
@@ -181,8 +179,8 @@ bool ParserROS::parseMessage(const PJ::MessageRef serialized_msg, double& timest
 
 void ParserROS::setLargeArraysPolicy(bool clamp, unsigned max_size)
 {
-  auto policy = clamp ? RosMsgParser::Parser::KEEP_LARGE_ARRAYS :
-                        RosMsgParser::Parser::DISCARD_LARGE_ARRAYS;
+  auto policy =
+      clamp ? RosMsgParser::Parser::KEEP_LARGE_ARRAYS : RosMsgParser::Parser::DISCARD_LARGE_ARRAYS;
 
   _parser.setMaxArrayPolicy(policy, max_size);
   MessageParser::setLargeArraysPolicy(clamp, max_size);
@@ -374,17 +372,24 @@ void ParserROS::parseDiagnosticMsg(const std::string& prefix, double& timestamp)
 
   for (const auto& status : msg.status)
   {
-    for (const auto& kv : status.key_value)
-    {
+    auto make_name = [&](const std::string& value_name) {
       if (status.hardware_id.empty())
       {
-        series_name = fmt::format("{}/{}/{}", prefix, status.name, kv.first);
+        return fmt::format("{}/{}/{}", prefix, status.name, value_name);
       }
       else
       {
-        series_name =
-            fmt::format("{}/{}/{}/{}", prefix, status.hardware_id, status.name, kv.first);
+        return fmt::format("{}/{}/{}/{}", prefix, status.hardware_id, status.name, value_name);
       }
+    };
+    series_name = make_name("level");
+    getSeries(series_name).pushBack({ timestamp, static_cast<double>(status.level) });
+    series_name = make_name("message");
+    getStringSeries(series_name).pushBack({ timestamp, status.message });
+
+    for (const auto& kv : status.key_value)
+    {
+      series_name = make_name(kv.first);
 
       bool ok;
       double value = QString::fromStdString(kv.second).toDouble(&ok);
@@ -522,10 +527,8 @@ void ParserROS::parseDataTamerSnapshot(const std::string& prefix, double& timest
 {
   DataTamerParser::SnapshotView snapshot;
 
-  snapshot.timestamp =
-      _deserializer->deserialize(BuiltinType::UINT64).convert<uint64_t>();
-  snapshot.schema_hash =
-      _deserializer->deserialize(BuiltinType::UINT64).convert<uint64_t>();
+  snapshot.timestamp = _deserializer->deserialize(BuiltinType::UINT64).convert<uint64_t>();
+  snapshot.schema_hash = _deserializer->deserialize(BuiltinType::UINT64).convert<uint64_t>();
 
   auto active_mask = _deserializer->deserializeByteSequence();
   snapshot.active_mask = { active_mask.data(), active_mask.size() };
@@ -542,8 +545,7 @@ void ParserROS::parseDataTamerSnapshot(const std::string& prefix, double& timest
 
   const auto toDouble = [](const auto& value) { return static_cast<double>(value); };
 
-  auto callback = [&](const std::string& name_field,
-                      const DataTamerParser::VarNumber& value) {
+  auto callback = [&](const std::string& name_field, const DataTamerParser::VarNumber& value) {
     double timestamp = double(snapshot.timestamp) * 1e-9;
     auto name = fmt::format("{}/{}/{}", _topic_name, dt_schema.channel_name, name_field);
     getSeries(name).pushBack({ timestamp, std::visit(toDouble, value) });
@@ -552,10 +554,12 @@ void ParserROS::parseDataTamerSnapshot(const std::string& prefix, double& timest
   DataTamerParser::ParseSnapshot(dt_schema, snapshot, callback);
 }
 
-static std::unordered_map<uint32_t, std::vector<std::string>> _pal_statistics_names;
+static std::unordered_map<std::string, std::unordered_map<uint32_t, std::vector<std::string>>>
+    _pal_statistics_names_per_topic;
 
 void ParserROS::parsePalStatisticsNames(const std::string& prefix, double& timestamp)
 {
+  auto parsed_prefix = parsePalStatisticsPrefix(prefix);
   const auto header = readHeader(timestamp);
   std::vector<std::string> names;
   const size_t vector_size = _deserializer->deserializeUInt32();
@@ -565,11 +569,12 @@ void ParserROS::parsePalStatisticsNames(const std::string& prefix, double& times
     _deserializer->deserializeString(name);
   }
   uint32_t names_version = _deserializer->deserializeUInt32();
-  _pal_statistics_names[names_version] = std::move(names);
+  _pal_statistics_names_per_topic[parsed_prefix][names_version] = std::move(names);
 }
 
 void ParserROS::parsePalStatisticsValues(const std::string& prefix, double& timestamp)
 {
+  auto parsed_prefix = parsePalStatisticsPrefix(prefix);
   const auto header = readHeader(timestamp);
   std::vector<double> values;
   const size_t vector_size = _deserializer->deserializeUInt32();
@@ -580,8 +585,9 @@ void ParserROS::parsePalStatisticsValues(const std::string& prefix, double& time
     value = _deserializer->deserialize(BuiltinType::FLOAT64).convert<double>();
   }
   uint32_t names_version = _deserializer->deserializeUInt32();
-  auto it = _pal_statistics_names.find(names_version);
-  if (it != _pal_statistics_names.end())
+  auto it = _pal_statistics_names_per_topic[parsed_prefix].find(names_version);
+  auto end_it = _pal_statistics_names_per_topic[parsed_prefix].end();
+  if (it != end_it)
   {
     const auto& names = it->second;
     const size_t N = std::min(names.size(), values.size());
@@ -593,6 +599,21 @@ void ParserROS::parsePalStatisticsValues(const std::string& prefix, double& time
   }
 }
 
+std::string ParserROS::parsePalStatisticsPrefix(const std::string& in_prefix)
+{
+  std::string prefix = in_prefix;
+  const std::vector<std::string> suffixes = { "/values", "/names" };
+  for (const auto& suffix : suffixes)
+  {
+    if (prefix.size() >= suffix.size() &&
+        prefix.compare(prefix.size() - suffix.size(), suffix.size(), suffix) == 0)
+    {
+      return prefix.substr(0, prefix.size() - suffix.size());
+    }
+  }
+  return prefix;
+}
+
 constexpr static std::array<BuiltinType, 11> _tsl_type_order = {
   BuiltinType::BOOL,   BuiltinType::INT8,    BuiltinType::UINT8,   BuiltinType::INT16,
   BuiltinType::UINT16, BuiltinType::INT32,   BuiltinType::UINT32,  BuiltinType::INT64,
@@ -600,11 +621,10 @@ constexpr static std::array<BuiltinType, 11> _tsl_type_order = {
 };
 static std::unordered_map<std::uint64_t, std::vector<std::string>> _tsl_definitions;
 // Add a buffer for messages that are received before their definition
-static std::unordered_map<
-    std::uint64_t, std::queue<std::tuple<std::string, double, std::vector<double>>>>
+static std::unordered_map<std::uint64_t,
+                          std::queue<std::tuple<std::string, double, std::vector<double>>>>
     _tsl_values_buffer;
-inline void ParserROS::process_tsl_values(const std::string& prefix,
-                                          const double& timestamp,
+inline void ParserROS::process_tsl_values(const std::string& prefix, const double& timestamp,
                                           const std::vector<std::string>& definition,
                                           const std::vector<double>& values)
 {
@@ -655,8 +675,8 @@ void ParserROS::parseTSLDefinition(const std::string& prefix, double& timestamp)
   while (!buffer_queue.empty())
   {
     const auto& tuple = buffer_queue.front();
-    process_tsl_values(std::get<0>(tuple), std::get<1>(tuple),
-                       _tsl_definitions[definition_hash], std::get<2>(tuple));
+    process_tsl_values(std::get<0>(tuple), std::get<1>(tuple), _tsl_definitions[definition_hash],
+                       std::get<2>(tuple));
     buffer_queue.pop();
   }
 }

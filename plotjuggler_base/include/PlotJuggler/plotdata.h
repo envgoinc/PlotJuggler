@@ -11,6 +11,7 @@
 #include "timeseries.h"
 #include "stringseries.h"
 #include <any>
+#include <unordered_set>
 
 namespace PJ
 {
@@ -55,18 +56,15 @@ struct PlotDataMapRef
 
   TimeseriesMap::iterator addNumeric(const std::string& name, PlotGroup::Ptr group = {});
 
-  AnySeriesMap::iterator addUserDefined(const std::string& name,
-                                        PlotGroup::Ptr group = {});
+  AnySeriesMap::iterator addUserDefined(const std::string& name, PlotGroup::Ptr group = {});
 
-  StringSeriesMap::iterator addStringSeries(const std::string& name,
-                                            PlotGroup::Ptr group = {});
+  StringSeriesMap::iterator addStringSeries(const std::string& name, PlotGroup::Ptr group = {});
 
   PlotDataXY& getOrCreateScatterXY(const std::string& name, PlotGroup::Ptr group = {});
 
   PlotData& getOrCreateNumeric(const std::string& name, PlotGroup::Ptr group = {});
 
-  StringSeries& getOrCreateStringSeries(const std::string& name,
-                                        PlotGroup::Ptr group = {});
+  StringSeries& getOrCreateStringSeries(const std::string& name, PlotGroup::Ptr group = {});
 
   PlotDataAny& getOrCreateUserDefined(const std::string& name, PlotGroup::Ptr group = {});
 

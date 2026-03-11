@@ -1,52 +1,54 @@
 function(find_or_download_zstd)
 
-    find_package(ZSTD QUIET)
+  if(TARGET zstd::libzstd_static)
+    message(STATUS "ZSTD targets already defined")
+    return()
+  endif()
 
-    if (ZSTD_FOUND)
-        message(STATUS "Found ZSTD in system")
+  find_package(ZSTD QUIET)
 
-        if(NOT TARGET zstd::zstd)
-            add_library(zstd::zstd INTERFACE IMPORTED)
-            set_target_properties(zstd::zstd PROPERTIES
-                INTERFACE_INCLUDE_DIRECTORIES "${ZSTD_INCLUDE_DIR}"
-                INTERFACE_LINK_LIBRARIES "${ZSTD_LIBRARY}"
-            )
-        endif()
+  # Check if ZSTD targets already exist (e.g., from Arrow)
+  if(NOT TARGET zstd::libzstd_static)
+     message(STATUS "Downloading and compiling ZSTD")
 
-    elseif(NOT TARGET libzstd_static)
-        ### zstd ###
-        CPMAddPackage(
-            NAME zstd
-            URL https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.zip
-            DOWNLOAD_ONLY YES
-        )
-        set(ZSTD_BUILD_STATIC ON  CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_SHARED OFF CACHE BOOL " " FORCE)
-        set(ZSTD_LEGACY_SUPPORT OFF   CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_TESTS OFF   CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_CONTRIB OFF  CACHE BOOL " " FORCE)
-        set(ZSTD_BUILD_EXAMPLES OFF CACHE BOOL " " FORCE)
-        set(ZSTD_MULTITHREAD_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_LEGACY_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_ZLIB_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_LZ4_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_LZMA_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_ZDICT_SUPPORT OFF CACHE BOOL " " FORCE)
-        set(ZSTD_PROGRAMS "" CACHE STRING " " FORCE)
+    # zstd ###
+    cpmaddpackage(
+      NAME zstd
+      URL https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.zip
+      DOWNLOAD_ONLY YES)
 
-        add_subdirectory(${zstd_SOURCE_DIR}/build/cmake ${zstd_BINARY_DIR})
-        set(ZSTD_FOUND TRUE)
+    set(LIBRARY_DIR ${zstd_SOURCE_DIR}/lib)
+    file(GLOB CommonSources ${LIBRARY_DIR}/common/*.c)
+    file(GLOB CommonHeaders ${LIBRARY_DIR}/common/*.h)
 
-        add_library(zstd::zstd INTERFACE IMPORTED)
-        set_target_properties(zstd::zstd PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES ${zstd_SOURCE_DIR}/lib
-            INTERFACE_LINK_LIBRARIES libzstd_static
-        )
-    endif()
+    file(GLOB CompressSources ${LIBRARY_DIR}/compress/*.c)
+    file(GLOB CompressHeaders ${LIBRARY_DIR}/compress/*.h)
 
-    if(NOT TARGET zstd::zstd)
-        message(FATAL_ERROR "ZSTD not found, please install ZSTD or download it")
-    endif()
+    file(GLOB DecompressSources ${LIBRARY_DIR}/decompress/*.c)
+    file(GLOB DecompressHeaders ${LIBRARY_DIR}/decompress/*.h)
+
+    set(Sources ${CommonSources} ${CompressSources} ${DecompressSources})
+    set(Headers ${PublicHeaders} ${CommonHeaders} ${CompressHeaders} ${DecompressHeaders})
+
+    add_compile_options(-DZSTD_DISABLE_ASM)
+
+    set(ZSTD_FOUND TRUE PARENT_SCOPE)
+
+    # define a helper to build both static and shared variants
+    macro(build_zstd_variant TYPE SUFFIX)
+      set(target libzstd_${SUFFIX})
+      add_library(${target} ${TYPE} ${Sources} ${Headers})
+      set_property(TARGET ${target} PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+      add_library(zstd::${target} INTERFACE IMPORTED)
+      set_target_properties(zstd::${target} PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES ${zstd_SOURCE_DIR}/lib
+        INTERFACE_LINK_LIBRARIES ${target})
+    endmacro()
+
+    # now build both
+    build_zstd_variant(STATIC static)
+
+  endif()
 
 endfunction()

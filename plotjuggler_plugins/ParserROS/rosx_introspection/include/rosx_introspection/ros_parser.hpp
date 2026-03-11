@@ -26,10 +26,10 @@
 
 #include "rosx_introspection/stringtree_leaf.hpp"
 #include "rosx_introspection/deserializer.hpp"
+#include "rosx_introspection/serializer.hpp"
 
 namespace RosMsgParser
 {
-
 struct FlatMessage
 {
   std::shared_ptr<MessageSchema> schema;
@@ -142,6 +142,16 @@ public:
   bool deserialize(Span<const uint8_t> buffer, FlatMessage* flat_output,
                    Deserializer* deserializer) const;
 
+#ifdef ROSX_JSON_PARSER
+
+  bool deserializeIntoJson(Span<const uint8_t> buffer, std::string* json_txt,
+                           Deserializer* deserializer, int indent = 0,
+                           bool ignore_constants = false) const;
+
+  bool serializeFromJson(const std::string_view json_string,
+                         Serializer* serializer) const;
+#endif
+
   typedef std::function<void(const ROSType&, Span<uint8_t>&)> VisitingCallback;
 
   /**
@@ -185,6 +195,8 @@ private:
 
   std::unique_ptr<Deserializer> _deserializer;
 };
+
+//--------------------------------------------------------------------------
 
 typedef std::vector<std::pair<std::string, double>> RenamedValues;
 

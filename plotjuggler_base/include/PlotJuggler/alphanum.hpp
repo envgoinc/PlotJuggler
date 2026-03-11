@@ -119,15 +119,21 @@ int alphanum_impl(const char* l, const char* r)
         }
         // if only the left character is a digit, we have a result
         if (l_digit)
+        {
           return -1;
+        }
         // if only the right character is a digit, we have a result
         if (r_digit)
+        {
           return +1;
+        }
         // compute the difference of both characters
         const int diff = l_char - r_char;
         // if they differ we have a result
         if (diff != 0)
+        {
           return diff;
+        }
         // otherwise process the next characters
         ++l;
         ++r;
@@ -167,7 +173,9 @@ int alphanum_impl(const char* l, const char* r)
       // if the difference is not equal to zero, we have a comparison result
       const long diff = l_int - r_int;
       if (diff != 0)
+      {
         return diff;
+      }
 
       // otherwise we process the next substring in STRING mode
       mode = STRING;
@@ -175,9 +183,13 @@ int alphanum_impl(const char* l, const char* r)
   }
 
   if (*r)
+  {
     return -1;
+  }
   if (*l)
+  {
     return +1;
+  }
   return 0;
 }
 
@@ -195,8 +207,8 @@ template <typename lT, typename rT>
 int alphanum_comp(const lT& left, const rT& right)
 {
 #ifdef DOJDEBUG
-  std::clog << "alphanum_comp<" << typeid(left).name() << "," << typeid(right).name()
-            << "> " << left << "," << right << std::endl;
+  std::clog << "alphanum_comp<" << typeid(left).name() << "," << typeid(right).name() << "> "
+            << left << "," << right << std::endl;
 #endif
   std::ostringstream l;
   l << left;

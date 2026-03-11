@@ -6,15 +6,15 @@
 #include <QPushButton>
 #include <QElapsedTimer>
 
+#define MCAP_IMPLEMENTATION
 #include <mcap/reader.hpp>
 
 const QString DialogMCAP::prefix = "DialogLoadMCAP::";
 
-DialogMCAP::DialogMCAP(
-    const std::unordered_map<int, mcap::ChannelPtr>& channels,
-    const std::unordered_map<int, mcap::SchemaPtr>& schemas,
-    const std::unordered_map<uint16_t, uint64_t>& messages_count_by_channelID,
-    std::optional<mcap::LoadParams> default_parameters, QWidget* parent)
+DialogMCAP::DialogMCAP(const std::unordered_map<int, mcap::ChannelPtr>& channels,
+                       const std::unordered_map<int, mcap::SchemaPtr>& schemas,
+                       const std::unordered_map<uint16_t, uint64_t>& messages_count_by_channelID,
+                       std::optional<mcap::LoadParams> default_parameters, QWidget* parent)
   : QDialog(parent)
   , ui(new Ui::dialog_mcap)
   , _select_all(QKeySequence(Qt::CTRL + Qt::Key_A), this)
@@ -33,8 +33,7 @@ DialogMCAP::DialogMCAP(
   connect(&_select_all, &QShortcut::activated, ui->tableWidget, [this]() {
     for (int row = 0; row < ui->tableWidget->rowCount(); row++)
     {
-      if (!ui->tableWidget->isRowHidden(row) &&
-          !ui->tableWidget->item(row, 0)->isSelected())
+      if (!ui->tableWidget->isRowHidden(row) && !ui->tableWidget->item(row, 0)->isSelected())
       {
         ui->tableWidget->selectRow(row);
       }
@@ -45,12 +44,9 @@ DialogMCAP::DialogMCAP(
           &QAbstractItemView::clearSelection);
 
   ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-  ui->tableWidget->horizontalHeader()->setSectionResizeMode(
-      1, QHeaderView::ResizeToContents);
-  ui->tableWidget->horizontalHeader()->setSectionResizeMode(
-      2, QHeaderView::ResizeToContents);
-  ui->tableWidget->horizontalHeader()->setSectionResizeMode(
-      3, QHeaderView::ResizeToContents);
+  ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+  ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+  ui->tableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
 
   ui->tableWidget->setRowCount(channels.size());
 
@@ -64,8 +60,7 @@ DialogMCAP::DialogMCAP(
     params.clamp_large_arrays = settings.value(prefix + "clamp", true).toBool();
     params.max_array_size = settings.value(prefix + "max_array", 500).toInt();
     params.use_timestamp = settings.value(prefix + "use_timestamp", false).toBool();
-    params.use_mcap_log_time =
-        settings.value(prefix + "use_mcap_log_time", false).toBool();
+    params.use_mcap_log_time = settings.value(prefix + "use_mcap_log_time", false).toBool();
     params.sorted_column = settings.value(prefix + "sorted_column", 0).toInt();
   }
   else
@@ -82,6 +77,7 @@ DialogMCAP::DialogMCAP(
     ui->radioSkip->setChecked(true);
   }
   ui->spinBox->setValue(params.max_array_size);
+  ui->spinBox->setFocusPolicy(Qt::ClickFocus);
   ui->checkBoxUseTimestamp->setChecked(params.use_timestamp);
   if (params.use_mcap_log_time)
   {
@@ -102,16 +98,13 @@ DialogMCAP::DialogMCAP(
     auto const& schema = schemas.at(channel->schemaId);
 
     ui->tableWidget->setItem(row, 0, new QTableWidgetItem(topic));
-    ui->tableWidget->setItem(row, 1,
-                             new QTableWidgetItem(QString::fromStdString(schema->name)));
-    ui->tableWidget->setItem(
-        row, 2, new QTableWidgetItem(QString::fromStdString(schema->encoding)));
+    ui->tableWidget->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(schema->name)));
+    ui->tableWidget->setItem(row, 2,
+                             new QTableWidgetItem(QString::fromStdString(schema->encoding)));
 
     auto count_it = messages_count_by_channelID.find(id);
-    int message_count =
-        (count_it != messages_count_by_channelID.end()) ? count_it->second : 0;
-    ui->tableWidget->setItem(row, 3,
-                             new QTableWidgetItem(QString::number(message_count)));
+    int message_count = (count_it != messages_count_by_channelID.end()) ? count_it->second : 0;
+    ui->tableWidget->setItem(row, 3, new QTableWidgetItem(QString::number(message_count)));
 
     for (int col = 0; col < columns_count; ++col)
     {
@@ -128,11 +121,14 @@ DialogMCAP::DialogMCAP(
     }
     row++;
   }
-  auto sort_order = (params.sorted_column >= columns_count) ?
-                        Qt::SortOrder::DescendingOrder :
-                        Qt::SortOrder::AscendingOrder;
+  auto sort_order = (params.sorted_column >= columns_count) ? Qt::SortOrder::DescendingOrder :
+                                                              Qt::SortOrder::AscendingOrder;
   auto sort_count = params.sorted_column % columns_count;
   ui->tableWidget->sortByColumn(sort_count, sort_order);
+
+  // Connect topic filter QLineEdit to filtering logic
+  connect(ui->lineEditFilter, &QLineEdit::textChanged, this,
+          &DialogMCAP::on_lineEditFilter_textChanged);
 }
 
 DialogMCAP::~DialogMCAP()
@@ -192,4 +188,24 @@ void DialogMCAP::accept()
   settings.setValue(prefix + "selected", selected_topics);
 
   QDialog::accept();
+}
+
+void DialogMCAP::on_lineEditFilter_textChanged(const QString& search_string)
+{
+  QStringList spaced_items = search_string.split(' ');
+  for (int row = 0; row < ui->tableWidget->rowCount(); row++)
+  {
+    auto item = ui->tableWidget->item(row, 0);
+    QString name = item ? item->text() : "";
+    bool toHide = false;
+    for (const auto& filter : spaced_items)
+    {
+      if (!name.contains(filter))
+      {
+        toHide = true;
+        break;
+      }
+    }
+    ui->tableWidget->setRowHidden(row, toHide);
+  }
 }

@@ -51,8 +51,7 @@ void PlotZoomer::widgetMouseMoveEvent(QMouseEvent* me)
       QRect rect(me->pos(), _initial_pos);
       QRectF zoomRect = invTransform(rect.normalized());
 
-      if (zoomRect.width() > minZoomSize().width() &&
-          zoomRect.height() > minZoomSize().height())
+      if (zoomRect.width() > minZoomSize().width() && zoomRect.height() > minZoomSize().height())
       {
         if (!_zoom_enabled)
         {
@@ -84,7 +83,11 @@ void PlotZoomer::widgetMouseMoveEvent(QMouseEvent* me)
 void PlotZoomer::widgetMouseReleaseEvent(QMouseEvent* me)
 {
   _mouse_pressed = false;
-  _zoom_enabled = false;
+  if (_zoom_enabled)
+  {
+    QApplication::restoreOverrideCursor();
+    _zoom_enabled = false;
+  }
   QwtPlotPicker::widgetMouseReleaseEvent(me);
   this->setTrackerMode(AlwaysOff);
 }
@@ -94,13 +97,14 @@ bool PlotZoomer::accept(QPolygon& pa) const
   QApplication::restoreOverrideCursor();
 
   if (pa.count() < 2)
+  {
     return false;
+  }
 
   QRect rect = QRect(pa[0], pa[int(pa.count()) - 1]);
   QRectF zoomRect = invTransform(rect.normalized());
 
-  if (zoomRect.width() < minZoomSize().width() &&
-      zoomRect.height() < minZoomSize().height())
+  if (zoomRect.width() < minZoomSize().width() && zoomRect.height() < minZoomSize().height())
   {
     return false;
   }

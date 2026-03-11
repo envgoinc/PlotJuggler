@@ -7,6 +7,10 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,7 +28,7 @@ jobs:
           required-ros-distributions: jazzy
 
       # Run ROS CI
-      - uses: ros-tooling/action-ros-ci@v0.3
+      - uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: plotjuggler
           target-ros2-distro: jazzy

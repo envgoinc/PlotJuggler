@@ -2,6 +2,371 @@
 Changelog for package plotjuggler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.16.0 (2026-03-10)
+-----------
+* add plotjuggler and foxglove bridge plugins
+* fix Windows MSVC wasmer linking
+* fix: timestamp detection with array fields (`#1310 <https://github.com/facontidavide/PlotJuggler/issues/1310>`_)
+* Add PlotGroup support to parsing plugins (topic/channel as group)
+* WebSocket dialog: dedicated Connect button, sorting, and UI polish
+* move to wasmer
+* Fix: No buttons appears / Can't select any topics (`#1306 <https://github.com/facontidavide/PlotJuggler/issues/1306>`_)
+* much faster MCAP pre-loading and update to 2.1.2
+* Replace StringRef with dictionary index in StringSeries. Fixes `#1031 <https://github.com/facontidavide/PlotJuggler/issues/1031>`_
+* Fix dangling StringRef pointers in StringSeries::clonePoints (`#1279 <https://github.com/facontidavide/PlotJuggler/issues/1279>`_)
+* Fix WebSocket plugin: use project's zstd target instead of find_path
+* Fix Reset to Default Curve Style in PlotWidget (`#1277 <https://github.com/facontidavide/PlotJuggler/issues/1277>`_)
+* Fix multiple bugs in rosx_introspection (ported from upstream)
+* WebSocket DataStreamer plugin integration (`#1295 <https://github.com/facontidavide/PlotJuggler/issues/1295>`_)
+* Fix: Save colorMaps section to layout XML (`#1278 <https://github.com/facontidavide/PlotJuggler/issues/1278>`_)
+* Add automatic detection and merging of separate date/time CSV columns (`#1259 <https://github.com/facontidavide/PlotJuggler/issues/1259>`_)
+* Support batched array messages in JSON/CBOR/BSON/MessagePack parsers (`#1285 <https://github.com/facontidavide/PlotJuggler/issues/1285>`_)
+* fix: quaternion-to-RPY toolbox streaming data loss (`#1289 <https://github.com/facontidavide/PlotJuggler/issues/1289>`_)
+* Topological sorting for nested dependencies in custom equations (`#1300 <https://github.com/facontidavide/PlotJuggler/issues/1300>`_)
+* Fix Parsing of DiagnosticArrays (`#1297 <https://github.com/facontidavide/PlotJuggler/issues/1297>`_)
+* fix: use first available parser instead of hardcoded fallback (`#1015 <https://github.com/facontidavide/PlotJuggler/issues/1015>`_)
+* fix DJS_PLUGINS_DIRECTORY in Docker build (`#1281 <https://github.com/facontidavide/PlotJuggler/issues/1281>`_)
+* fix: guard undo/redo from firing during active popups (`#1287 <https://github.com/facontidavide/PlotJuggler/issues/1287>`_)
+* fix merging of string series (`#1298 <https://github.com/facontidavide/PlotJuggler/issues/1298>`_)
+* fix: parsing of nested topics in ulogs (`#1301 <https://github.com/facontidavide/PlotJuggler/issues/1301>`_)
+* fix: Arrow 23.0.0 compatibility (`#1282 <https://github.com/facontidavide/PlotJuggler/issues/1282>`_)
+* fix placeholder text color (workaround to Qt5 bug)
+* improve clarity of nlohmann parsers dialog
+* Adjust dialog size based on protocol selection
+* fix: inherit legend settings when splitting plot views (`#1260 <https://github.com/facontidavide/PlotJuggler/issues/1260>`_)
+* Fix Conan 2.x build instructions in COMPILE.md (`#1256 <https://github.com/facontidavide/PlotJuggler/issues/1256>`_)
+* Contributors: Alvvalencia, Copilot, Davide Faconti, Jeremy Elson, KIRAN, Luca Bonamini, Panav, Sachin Kumar, Simon Sagmeister, Timo Stienstra, Tobias Büchli, dependabot[bot], Øyvind Taksdal Stubhaug
+
+3.15.0 (2025-12-27)
+-------------------
+
+3.14.6 (2025-12-27)
+-------------------
+* cherry pick `#835 <https://github.com/facontidavide/PlotJuggler/issues/835>`_: use timspam in protobuf, if present
+* formatting
+* fix style in preferences
+* Feature: add option to swap pan/zoom mouse actions (`#1235 <https://github.com/facontidavide/PlotJuggler/issues/1235>`_)
+* cleanup ULG plugin
+* Merge branch 'he_parse'
+* fix formatting
+* fix comments
+* CSV parsing: fix issue `#1237 <https://github.com/facontidavide/PlotJuggler/issues/1237>`_
+* Add hexadecimal timestamp parsing (0x prefix only)
+  Support hexadecimal values in CSV files when explicitly prefixed with 0x.
+  This avoids ambiguity with string labels like 'A' or 'B' which could
+  otherwise be misinterpreted as hex values.
+  Addresses feedback from @facontidavide on `#1227 <https://github.com/facontidavide/PlotJuggler/issues/1227>`_
+* Fix plugin installation path from /usr/OFF to /usr/lib/plotjuggler/plugins (`#1239 <https://github.com/facontidavide/PlotJuggler/issues/1239>`_)
+* Add GitHub Copilot instructions for repository context (`#1242 <https://github.com/facontidavide/PlotJuggler/issues/1242>`_)
+* add devcontainer
+* should fix `#1223 <https://github.com/facontidavide/PlotJuggler/issues/1223>`_
+* formatting
+* Contributors: Copilot, Davide Faconti, panav, viktor-av
+
+3.14.5 (2025-12-22)
+-------------------
+* add option to change width of lines in PlotWidget Editor
+* fix snap build
+* Contributors: Davide Faconti
+
+3.14.4 (2025-12-19)
+-------------------
+* change ID
+* Install plugins into lib tree (`#1228 <https://github.com/facontidavide/PlotJuggler/issues/1228>`_)
+  Fixes `#1153 <https://github.com/facontidavide/PlotJuggler/issues/1153>`_
+* 🛠️ Bump actions/download-artifact from 6 to 7 (`#1229 <https://github.com/facontidavide/PlotJuggler/issues/1229>`_)
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* 🛠️ Bump actions/upload-artifact from 5 to 6 (`#1230 <https://github.com/facontidavide/PlotJuggler/issues/1230>`_)
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* fix issue `#1226 <https://github.com/facontidavide/PlotJuggler/issues/1226>`_
+* 🛠️ Bump actions/cache from 4 to 5 (`#1225 <https://github.com/facontidavide/PlotJuggler/issues/1225>`_)
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* Contributors: Davide Faconti, SammysHP, dependabot[bot]
+
+3.14.3 (2025-12-07)
+-------------------
+* refactored CSV plugin for robust date/time
+* fix ULOG link in README
+* add 3rdparty date parsing
+* add margin to collapsed QSplitter
+* add new name filter for custom series
+* Contributors: Davide Faconti
+
+3.14.2 (2025-12-06)
+-------------------
+* add new binary filter
+* add code of conduct and remove old issue template
+* Update issue templates
+* fix data merging
+* new memes
+* Contributors: Davide Faconti
+
+3.14.0 (2025-11-22)
+-------------------
+* bug fix in multiple curves filter
+* Merge pull request `#1192 <https://github.com/facontidavide/PlotJuggler/issues/1192>`_ from MichelJansson/feature/transform-multiselect
+  Support curve multi-selection in Transform Editor
+* Merge branch 'main' of github.com:facontidavide/PlotJuggler
+* add new anonymous telemetry
+* Merge pull request `#1199 <https://github.com/facontidavide/PlotJuggler/issues/1199>`_ from af-maad/fix/parquet-timestamp-selection
+  Fix parquet timestamp selection when some columns are invalid types
+* Merge pull request `#1211 <https://github.com/facontidavide/PlotJuggler/issues/1211>`_ from gvz/merging_data_loading
+  data series with the same name can be mergered
+* Update plotjuggler_app/mainwindow.ui
+* Merge pull request `#1209 <https://github.com/facontidavide/PlotJuggler/issues/1209>`_ from gvz/parquet_loading_timestamping
+  Parquet loading
+* Update macos.yaml
+* Fix detection of system-provided liblz4 and zstd (`#1200 <https://github.com/facontidavide/PlotJuggler/issues/1200>`_)
+  Without this, cmake tries to download lz4 and zstd from the internet
+  even if they are available in the system.
+* Added a script to remove orphaned link upon uninstall on debian (`#1205 <https://github.com/facontidavide/PlotJuggler/issues/1205>`_)
+  The symbolic link that gets created on postinst is left behind
+  upon package removal. This was also causing reinstallation to
+  display an error stating that the link already exists.
+  Change-Id: I6a85baa63ee61e843ad1accdd08e5b632a76d2e9
+* Update compile instructions for Fedora (`#1206 <https://github.com/facontidavide/PlotJuggler/issues/1206>`_)
+  I just tried installing deps and compiling on Fedora 42,
+  and I had to make these changes to get it to build.
+  Not sure which Fedora version these instructions were
+  written for, so I specified that this is Fedora 42.
+* 🛠️ Bump actions/download-artifact from 5 to 6 (`#1202 <https://github.com/facontidavide/PlotJuggler/issues/1202>`_)
+  Bumps [actions/download-artifact](https://github.com/actions/download-artifact) from 5 to 6.
+  - [Release notes](https://github.com/actions/download-artifact/releases)
+  - [Commits](https://github.com/actions/download-artifact/compare/v5...v6)
+  ---
+  updated-dependencies:
+  - dependency-name: actions/download-artifact
+  dependency-version: '6'
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+  ...
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* 🛠️ Bump github/codeql-action from 3 to 4 (`#1196 <https://github.com/facontidavide/PlotJuggler/issues/1196>`_)
+  Bumps [github/codeql-action](https://github.com/github/codeql-action) from 3 to 4.
+  - [Release notes](https://github.com/github/codeql-action/releases)
+  - [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)
+  - [Commits](https://github.com/github/codeql-action/compare/v3...v4)
+  ---
+  updated-dependencies:
+  - dependency-name: github/codeql-action
+  dependency-version: '4'
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+  ...
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* 🛠️ Bump actions/upload-artifact from 4 to 5 (`#1203 <https://github.com/facontidavide/PlotJuggler/issues/1203>`_)
+  Bumps [actions/upload-artifact](https://github.com/actions/upload-artifact) from 4 to 5.
+  - [Release notes](https://github.com/actions/upload-artifact/releases)
+  - [Commits](https://github.com/actions/upload-artifact/compare/v4...v5)
+  ---
+  updated-dependencies:
+  - dependency-name: actions/upload-artifact
+  dependency-version: '5'
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+  ...
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* 🛠️ Bump actions/checkout from 5 to 6 (`#1214 <https://github.com/facontidavide/PlotJuggler/issues/1214>`_)
+  Bumps [actions/checkout](https://github.com/actions/checkout) from 5 to 6.
+  - [Release notes](https://github.com/actions/checkout/releases)
+  - [Changelog](https://github.com/actions/checkout/blob/main/CHANGELOG.md)
+  - [Commits](https://github.com/actions/checkout/compare/v5...v6)
+  ---
+  updated-dependencies:
+  - dependency-name: actions/checkout
+  dependency-version: '6'
+  dependency-type: direct:production
+  update-type: version-update:semver-major
+  ...
+  Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+* data_loading: timeseries with the same name are merged by default
+* parquet_loading: fix timestamp handling for arrow::TIMESTAMP
+* parquet_loading: fix Boolean display
+* Fix parquet timestamp selection when some columns are invalid types
+* Support curve multi-selection in Transform Editor
+  Enhanced plotwidget transforms (Transform Editor) to support curve
+  multi-selection, enabling batch operations of curve transforms.
+  - Updated curve list to handle multi-selection.
+  - Changed curve selection mode to `ExtendedSelection`.
+  - When multi-selection is started, the transform selection UI is
+  cleared to make batch manipulation explicit (ie. batch transform
+  not applied until explicitly selected).
+  - Changed transform list for multi-curve updates.
+  - Transform state is applied to all selected curves using existing
+  XML serialization api.
+  - Alias logic updated to better stay in sync with currently
+  selected transform unless manually changed by checking it the
+  current alias is the default alias for the previous transform.
+* Contributors: Davide Faconti, Georg von Zengen, Laki Dantanarayana, Mattias Adolfsson, Michal Sojka, Michel Jansson, Morten Fyhn Amundsen, dependabot[bot]
+
+3.13.2 (2025-10-07)
+-------------------
+* Fix issue `#1194 <https://github.com/facontidavide/PlotJuggler/issues/1194>`_
+* address issue `#1195 <https://github.com/facontidavide/PlotJuggler/issues/1195>`_
+* fix issue `#1193 <https://github.com/facontidavide/PlotJuggler/issues/1193>`_
+* bug fix
+* Contributors: Davide Faconti
+
+3.13.1 (2025-10-01)
+-------------------
+* [Feature] New Filter to display the time since the previous datapoint (`#1180 <https://github.com/facontidavide/PlotJuggler/issues/1180>`_)
+  * add new filter to get the time since the last data point
+  * rename for clarity
+* fix LZ4 and ZSTD (`#1188 <https://github.com/facontidavide/PlotJuggler/issues/1188>`_)
+* fix issue `#1189 <https://github.com/facontidavide/PlotJuggler/issues/1189>`_
+* make library rosx static
+* Contributors: Davide Faconti, Simon Sagmeister
+
+3.13.0 (2025-09-29)
+-------------------
+* Merge branch 'plugin_manager'
+* fix CI
+* add WASM based pligins (experimental)
+* add Ankel unordered map
+* minor changes
+* Merge pull request `#1185 <https://github.com/facontidavide/PlotJuggler/issues/1185>`_ from simonsag96/fix_tab_add_button
+  [Bugfix] Add Tab Button being placed outside plot widget
+* Fix tab adding button being placed outside plot widget
+* Merge pull request `#1184 <https://github.com/facontidavide/PlotJuggler/issues/1184>`_ from MichelJansson/feature/fix-windows-icon
+* Fixed windows app icon + moved resource file
+* created plugin manager
+* Contributors: Davide Faconti, Michel Jansson, Simon Sagmeister
+
+3.12.2 (2025-09-29)
+-------------------
+* Merge pull request `#1147 <https://github.com/facontidavide/PlotJuggler/issues/1147>`_ from gvz/nix_flake
+* fix zstd installing headers and libraries
+* flip the text if on the right size of the canvas
+* Use CurveTracker for the reference line
+* Update dependencies needed for macOS installation (`#1155 <https://github.com/facontidavide/PlotJuggler/issues/1155>`_)
+  On following the instructions for compiling in macOS on a new machine I ran into errors during the build. Installing git-lfs solved the issue
+* Make spin box in MCAP Dialog to click focus (`#1179 <https://github.com/facontidavide/PlotJuggler/issues/1179>`_)
+* [Feature] Add topic filtering into the mcap dialog (`#1181 <https://github.com/facontidavide/PlotJuggler/issues/1181>`_)
+* add gold sponsors to readme
+* enable parquet plugin in nix build
+* fix Qt plugin loading in nix build
+* remove libmcap from nix build
+* flake: add more dependencies
+* add nix flake
+* Contributors: David Byrne, Davide Faconti, Georg von Zengen, Simon Sagmeister, bigFin
+
+3.12.0 (2025-09-17)
+-------------------
+* rosx_introspection updated
+* fix minimum cmake
+* formatting
+* giving up on MCAP
+* new reference bar
+* Merge pull request `#1164 <https://github.com/facontidavide/PlotJuggler/issues/1164>`_ from matthew-t-watson/main
+  Fix atan bug in lua `quat_to_yaw` and `quat_to_roll` conversions for lua versions <5.3
+* Fix atan bug in quat_to_x conversions
+* Contributors: Davide Faconti, Matthew T. Watson
+
+3.11.1 (2025-09-03)
+-------------------
+* Update windows.yaml
+* Update ubuntu.yaml
+* git pushMerge branch 'main' of github.com:facontidavide/PlotJuggler
+* refactored Parquet plugin
+* CI: rename .deb file before uploading
+  fixes the uploading of the artifacts, without this the file can not be
+  found in the release upload
+  CI: rename .deb file before uploading
+  fixes the uploading of the artifacts, without this the file can not be
+  found in the release upload
+* Contributors: Davide Faconti, Georg von Zengen
+
+3.11.0 (2025-08-31)
+-------------------
+* Merge pull request `#1157 <https://github.com/facontidavide/PlotJuggler/issues/1157>`_ from facontidavide/conan_builds
+  Conan builds
+* merge PR `#1139 <https://github.com/facontidavide/PlotJuggler/issues/1139>`_ and  `#1141 <https://github.com/facontidavide/PlotJuggler/issues/1141>`_ (from @gvz)
+* fix mqtt username and password swap (`#1159 <https://github.com/facontidavide/PlotJuggler/issues/1159>`_)
+  fixes  `#1158 <https://github.com/facontidavide/PlotJuggler/issues/1158>`_
+* fix parquet
+* let CPM download LZ4 and ZSTD
+* fix conan builds
+* fix(ulog_parser): allow messages without timestamp field (`#1154 <https://github.com/facontidavide/PlotJuggler/issues/1154>`_)
+  use a fixed increment when no timestamp is logged
+* build debian packages in github actions (`#1146 <https://github.com/facontidavide/PlotJuggler/issues/1146>`_)
+  * build debian in actions
+  * add ubuntu:24.04 build
+  will enable ubuntu builds
+  * upload .deb files to releases
+  ---------
+  Co-authored-by: Georg von Zengen <georg.vonzengen@isaraerospace.com>
+* Add core24 snap (`#1100 <https://github.com/facontidavide/PlotJuggler/issues/1100>`_)
+  * add core24 snap
+  * add snap core24 github action
+* rename FindMosquitto.cmake to FindMOSQUITTO.cmake (`#1140 <https://github.com/facontidavide/PlotJuggler/issues/1140>`_)
+  fixes `#1138 <https://github.com/facontidavide/PlotJuggler/issues/1138>`_
+  Co-authored-by: Georg von Zengen <georg.vonzengen@isaraerospace.com>
+* Fix error 127 from linuxdeploy in Docker builds (`#1149 <https://github.com/facontidavide/PlotJuggler/issues/1149>`_)
+  * dockerfile: set APPIMAGE_EXTRACT_AND_RUN so linuxdeploy-qt works in Docker
+  The Qt plugin is a separate AppImage, and the CLI flag doesn’t propagate.
+  Exporting the env var makes both linuxdeploy and the plugin run in extract-and-run
+  mode, avoiding FUSE and fixing exit code 127 in container builds.
+  * dockerfile: fix warning from inconsistent case
+* Fix protobuf compilation on linux hosts (`#1143 <https://github.com/facontidavide/PlotJuggler/issues/1143>`_)
+  * fix PROTOBUF_FOUND for case sentitive systems
+  * fix compiler error in ParserProtobuf on linux
+  ---------
+  Co-authored-by: Georg von Zengen <georg.vonzengen@isaraerospace.com>
+* Contributors: Davide Faconti, Georg von Zengen, Mathieu Bresciani, giusebar, Øyvind Taksdal Stubhaug
+
+3.10.11 (2025-07-26)
+--------------------
+* Datatamer fix (`#1131 <https://github.com/facontidavide/PlotJuggler/issues/1131>`_)
+* new clang format
+* Squashed commit of the following:
+  Author: Maximilien Naveau <maximilien.naveau@pal-robotics.com>
+  Date:   Thu Jul 24 12:21:39 2025 +0200
+  Solve the PALStatistics message parsing in case several topic are
+  published.
+* Fix Issues on MacOS Compilation (`#1125 <https://github.com/facontidavide/PlotJuggler/issues/1125>`_)
+* Add no splash to settings (`#1122 <https://github.com/facontidavide/PlotJuggler/issues/1122>`_)
+  * Added option to skip splash screen to settings ini file
+  * Added option to preference screen
+* provide install rule again from catkin build (`#1124 <https://github.com/facontidavide/PlotJuggler/issues/1124>`_)
+  Otherwise catkin install workspaces include everything except for the binary...
+* try fix LZ4/ZSTD (`#1121 <https://github.com/facontidavide/PlotJuggler/issues/1121>`_)
+* Contributors: Connor Anderson, Davide Faconti, Michael Görner, thenoname
+
+3.10.10 (2025-07-11)
+--------------------
+* cosmetic change in Preferences
+* Fmt cpm (`#1120 <https://github.com/facontidavide/PlotJuggler/issues/1120>`_)
+* Make export plot size an application param
+* Add an action to plot a whole tab
+* fix missing submodule
+* fix Win CI
+* Contributors: Blaise Le Coquil, Davide Faconti
+
+3.10.9 (2025-07-08)
+-------------------
+* add Arrow to conan and fix Windows CI (`#1109 <https://github.com/facontidavide/PlotJuggler/issues/1109>`_)
+* modernize cmake
+* apply formatting to cmakelists
+* Fix compilation with recent protobuf (`#1108 <https://github.com/facontidavide/PlotJuggler/issues/1108>`_)
+* Change behavior of DataLoadCSV::readDataFromFile to skip incomplete/corrupted lines.
+* Fix line numbers in DataLoadCVS::readDataFromFile.
+  Line numbers within the error/warning messages boxes didn't show the correct line numbers if the CVS file contained empty lines.
+* Contributors: Davide Faconti, Silvio Traversaro, Valentin Platzgummer
+
+3.10.8 (2025-06-26)
+-------------------
+* fix ROS package
+* Feat/cmakelist namespace (`#1099 <https://github.com/facontidavide/PlotJuggler/issues/1099>`_)
+  * add namespace when using plotjuggler, include macrodependency
+  * use namespace
+* Fix core22 snap by updating CMake config and pinning snapcraft to 7.x (`#1098 <https://github.com/facontidavide/PlotJuggler/issues/1098>`_)
+* fix linking to roscpp when required (`#1102 <https://github.com/facontidavide/PlotJuggler/issues/1102>`_)
+* minor speed improvement
+* avoid overhead in GUI when loading MCAP
+* WIP changes
+* fix windows compilation (`#1094 <https://github.com/facontidavide/PlotJuggler/issues/1094>`_)
+* Contributors: Davide Faconti, Michael Görner, giusebar
+
 3.10.7 (2025-06-16)
 -------------------
 * fix mcap on ROS2

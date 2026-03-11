@@ -6,10 +6,23 @@
 #include <set>
 #include <string.h>
 #include <cstdint>
+#include <optional>
 
-#include "string_view.hpp"
+#include <string_view>
 
-typedef nonstd::string_view StringView;
+typedef std::string_view StringView;
+
+// Helper functions for std::string_view compatibility (C++17)
+inline bool startsWith(std::string_view sv, std::string_view prefix)
+{
+  return sv.size() >= prefix.size() && sv.compare(0, prefix.size(), prefix) == 0;
+}
+
+inline bool endsWith(std::string_view sv, std::string_view suffix)
+{
+  return sv.size() >= suffix.size() &&
+         sv.compare(sv.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
 
 class ULogParser
 {
@@ -109,7 +122,7 @@ public:
 
   struct Timeseries
   {
-    std::vector<uint64_t> timestamps;
+    std::vector<std::optional<uint64_t>> timestamps;
     std::vector<std::pair<std::string, std::vector<double>>> data;
   };
 
@@ -151,8 +164,7 @@ private:
 
   std::streampos _data_section_start;  ///< first ADD_LOGGED_MSG message
 
-  int64_t _read_until_file_position =
-      1ULL << 60;  ///< read limit if log contains appended data
+  int64_t _read_until_file_position = 1ULL << 60;  ///< read limit if log contains appended data
 
   std::set<std::string> _overridden_params;
 
@@ -172,6 +184,6 @@ private:
 
   void parseDataMessage(const Subscription& sub, char* message);
 
-  char* parseSimpleDataMessage(Timeseries& timeseries, const Format* format,
-                               char* message, size_t* index);
+  char* parseSimpleDataMessage(Timeseries& timeseries, const Format* format, char* message,
+                               size_t* index, bool read_timestamp = true);
 };

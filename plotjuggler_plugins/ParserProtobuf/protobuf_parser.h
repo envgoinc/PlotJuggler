@@ -17,17 +17,14 @@ using namespace PJ;
 class ProtobufParser : public MessageParser
 {
 public:
-  ProtobufParser(const std::string& topic_name,
-                 const google::protobuf::Descriptor* descriptor, PlotDataMapRef& data)
-    : MessageParser(topic_name, data)
-    , _proto_pool(&_proto_database)
-    , _msg_descriptor(descriptor)
+  ProtobufParser(const std::string& topic_name, const google::protobuf::Descriptor* descriptor,
+                 PlotDataMapRef& data)
+    : MessageParser(topic_name, data), _proto_pool(&_proto_database), _msg_descriptor(descriptor)
   {
   }
 
   ProtobufParser(const std::string& topic_name, const std::string type_name,
-                 const google::protobuf::FileDescriptorSet& descriptor_set,
-                 PlotDataMapRef& data);
+                 const google::protobuf::FileDescriptorSet& descriptor_set, PlotDataMapRef& data);
 
   bool parseMessage(const MessageRef serialized_msg, double& timestamp) override;
 
@@ -37,4 +34,7 @@ protected:
 
   google::protobuf::DynamicMessageFactory _msg_factory;
   const google::protobuf::Descriptor* _msg_descriptor = nullptr;
+
+  bool _first_message = true;
+  std::optional<size_t> _timestamp_field_index;
 };

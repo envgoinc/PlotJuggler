@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include <QNetworkInterface>
 
 #include "ui_udp_server.h"
+#include "PlotJuggler/dialog_utils.h"
 
 class UdpServerDialog : public QDialog
 {
@@ -102,7 +103,7 @@ bool UDP_Server::start(QStringList*)
   QString protocol = settings.value("UDP_Server::protocol").toString();
   if (parserFactories()->find(protocol) == parserFactories()->end())
   {
-    protocol = "json";
+    protocol = parserFactories()->begin()->first;
   }
 
   dialog.ui->lineEditAddress->setText(address_str);
@@ -110,7 +111,7 @@ bool UDP_Server::start(QStringList*)
 
   ParserFactoryPlugin::Ptr parser_creator;
 
-  auto onComboChanged = [&](const QString& selected_protocol) {
+  auto onComboChanged = [this, &dialog, &parser_creator](const QString& selected_protocol) {
     if (parser_creator)
     {
       if (auto prev_widget = parser_creator->optionsWidget())
@@ -120,15 +121,11 @@ bool UDP_Server::start(QStringList*)
     }
     parser_creator = parserFactories()->at(selected_protocol);
 
-    if (auto widget = parser_creator->optionsWidget())
-    {
-      widget->setVisible(true);
-    }
+    showOptionsWidget(&dialog, dialog.ui->boxOptions, parser_creator->optionsWidget());
   };
 
-  connect(dialog.ui->comboBoxProtocol,
-          qOverload<const QString&>(&QComboBox::currentIndexChanged), this,
-          onComboChanged);
+  connect(dialog.ui->comboBoxProtocol, qOverload<const QString&>(&QComboBox::currentIndexChanged),
+          this, onComboChanged);
 
   dialog.ui->comboBoxProtocol->setCurrentText(protocol);
   onComboChanged(protocol);
@@ -176,8 +173,7 @@ bool UDP_Server::start(QStringList*)
       bind_address = QHostAddress::AnyIPv6;
     }
     success &= _udp_socket->bind(bind_address, port,
-                                 QAbstractSocket::ShareAddress |
-                                     QAbstractSocket::ReuseAddressHint);
+                                 QAbstractSocket::ShareAddress | QAbstractSocket::ReuseAddressHint);
     if (!success)
     {
       qDebug() << tr("Couldn't bind IPv%3 UDP socket (%1, %2)")
@@ -191,8 +187,7 @@ bool UDP_Server::start(QStringList*)
     for (const auto& interface : QNetworkInterface::allInterfaces())
     {
       QNetworkInterface::InterfaceFlags iflags = interface.flags();
-      if (success && interface.isValid() &&
-          !iflags.testFlag(QNetworkInterface::IsLoopBack) &&
+      if (success && interface.isValid() && !iflags.testFlag(QNetworkInterface::IsLoopBack) &&
           iflags.testFlag(QNetworkInterface::CanMulticast) &&
           iflags.testFlag(QNetworkInterface::IsRunning))
       {
@@ -218,10 +213,7 @@ bool UDP_Server::start(QStringList*)
 
   if (success)
   {
-    qDebug() << tr("IPv%3 UDP listening on (%1, %2)")
-                    .arg(address_str)
-                    .arg(port)
-                    .arg(ip_version);
+    qDebug() << tr("IPv%3 UDP listening on (%1, %2)").arg(address_str).arg(port).arg(ip_version);
   }
   else
   {
