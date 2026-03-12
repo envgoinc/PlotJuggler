@@ -117,7 +117,7 @@ void PluginManager::loadPlugin(const QString& filename)
       return;
     }
     qDebug() << message;
-    _loaded_plugins.insert(plugin_name);
+    _loaded_plugins.insert(fileinfo.fileName());
 
     if (loader)
     {

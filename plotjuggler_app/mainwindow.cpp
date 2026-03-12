@@ -587,13 +587,14 @@ void MainWindow::loadAllPlugins(QStringList command_line_plugin_folders)
 void MainWindow::initializePlugins()
 {
   // add loaded parsers to the current ones
-  for (const auto& [plugin_name, parser] : _plugin_manager.parserFactories())
+  for (const auto& [encoding, parser] : _plugin_manager.parserFactories())
   {
-    auto encodings = QString(parser->encoding()).split(";");
-    for (const auto& encoding : encodings)
+    if (!parser)
     {
-      _parser_factories.insert(std::make_pair(encoding, parser));
+      qWarning() << "Skipping invalid parser factory for encoding key:" << encoding;
+      continue;
     }
+    _parser_factories.insert(std::make_pair(encoding, parser));
   }
 
   for (const auto& [plugin_name, loader] : _plugin_manager.dataLoaders())
