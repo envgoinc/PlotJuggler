@@ -51,12 +51,6 @@ public:
     return _errors;
   }
 
-  void RecordError(absl::string_view filename, int line, int column,
-                   absl::string_view message) override
-  {
-
-  }
-
 private:
   QStringList _errors;
 };
