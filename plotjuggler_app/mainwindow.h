@@ -237,6 +237,7 @@ private:
 
   void updateRecentDataMenu(QStringList new_filenames);
   void updateRecentLayoutMenu(QStringList new_filenames);
+  void deleteCurves(const std::vector<std::string>& curve_names, bool remove_linked_custom);
 
   void updatedDisplayTime();
 

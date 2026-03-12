@@ -1070,25 +1070,43 @@ bool MainWindow::xmlLoadState(QDomDocument state_document)
 
 void MainWindow::onDeleteMultipleCurves(const std::vector<std::string>& curve_names)
 {
+  deleteCurves(curve_names, true);
+}
+
+void MainWindow::deleteCurves(const std::vector<std::string>& curve_names,
+                              bool remove_linked_custom)
+{
   std::set<std::string> to_be_deleted;
   for (auto& name : curve_names)
   {
     to_be_deleted.insert(name);
   }
-  // add to the list of curves to delete the derived transforms
-  size_t prev_size = 0;
-  while (prev_size < to_be_deleted.size())
+
+  if (remove_linked_custom)
   {
-    prev_size = to_be_deleted.size();
-    for (auto& [trans_name, transform] : _transform_functions)
+    // add to the list of curves to delete the derived transforms
+    size_t prev_size = 0;
+    while (prev_size < to_be_deleted.size())
     {
-      for (const auto& source : transform->dataSources())
+      prev_size = to_be_deleted.size();
+      for (auto& [trans_name, transform] : _transform_functions)
       {
-        if (to_be_deleted.count(source->plotName()) > 0)
+        for (const auto& source : transform->dataSources())
         {
-          to_be_deleted.insert(trans_name);
+          if (to_be_deleted.count(source->plotName()) > 0)
+          {
+            to_be_deleted.insert(trans_name);
+          }
         }
       }
+    }
+  }
+  else
+  {
+    // Never delete custom transforms in this mode.
+    for (const auto& [custom_name, _] : _transform_functions)
+    {
+      to_be_deleted.erase(custom_name);
     }
   }
 
@@ -1097,7 +1115,10 @@ void MainWindow::onDeleteMultipleCurves(const std::vector<std::string>& curve_na
     emit dataSourceRemoved(curve_name);
     _curvelist_widget->removeCurve(curve_name);
     _mapped_plot_data.erase(curve_name);
-    _transform_functions.erase(curve_name);
+    if (remove_linked_custom)
+    {
+      _transform_functions.erase(curve_name);
+    }
   }
   updateTimeOffset();
   forEachWidget([](PlotWidget* plot) { plot->replot(); });
@@ -1309,24 +1330,31 @@ bool MainWindow::loadDataFromFiles(QStringList filenames)
   {
     data_replaced_entirely = true;
   }
-  else if (!add_prefix)
+  else if (!add_prefix && !merge_data)
   {
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(
-        this, tr("Warning"),
-        tr("Do you want to remove the previously loaded data?\nYes removes old data, No merges new and old data\n"),
-        QMessageBox::Yes | QMessageBox::No, QMessageBox::NoButton);
-
-    if (reply == QMessageBox::Yes)
+    std::vector<std::string> to_delete;
+    to_delete.reserve(previous_names.size());
+    for (const auto& name : previous_names)
     {
-      std::vector<std::string> to_delete;
-      for (const auto& name : previous_names)
+      if (_transform_functions.count(name) == 0)
       {
         to_delete.push_back(name);
       }
-      onDeleteMultipleCurves(to_delete);
-      data_replaced_entirely = true;
     }
+
+    deleteCurves(to_delete, false);
+    for (auto& custom_it : _transform_functions)
+    {
+      auto it = _mapped_plot_data.numeric.find(custom_it.first);
+      if (it != _mapped_plot_data.numeric.end())
+      {
+        it->second.clear();
+      }
+      custom_it.second->reset();
+    }
+    updateDataAndReplot(true);
+    ui->timeSlider->setRealValue(ui->timeSlider->getMinimum());
+    data_replaced_entirely = true;
   }
 
   // special case when only the last file should be remembered
