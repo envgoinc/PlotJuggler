@@ -12,6 +12,8 @@
 #include <QMenu>
 #include <QDomElement>
 #include <functional>
+#include <string>
+#include <unordered_set>
 #include "PlotJuggler/plotdata.h"
 #include "PlotJuggler/pj_plugin.h"
 
@@ -39,6 +41,12 @@ public:
     _datamap = datamap;
   }
 
+  void setVisibleCurvesProvider(
+      std::function<std::unordered_set<std::string>()> visible_curves_provider)
+  {
+    _visible_curves_provider = std::move(visible_curves_provider);
+  }
+
 public slots:
   /// Method called when the checkbox "enabled" is checked in the main app.
   virtual void setEnabled(bool enabled) = 0;
@@ -50,6 +58,7 @@ signals:
 
 protected:
   const PlotDataMapRef* _datamap;
+  std::function<std::unordered_set<std::string>()> _visible_curves_provider;
 };
 
 using StatePublisherPtr = std::shared_ptr<StatePublisher>;

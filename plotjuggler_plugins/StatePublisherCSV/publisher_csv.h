@@ -7,8 +7,11 @@
 #include <QTimer>
 #include <thread>
 #include <mutex>
+#include <vector>
 #include "ui_publisher_csv_dialog.h"
 #include "PlotJuggler/statepublisher_base.h"
+
+class QTextStream;
 
 class StatePublisherCSV : public PJ::StatePublisher
 {
@@ -61,6 +64,11 @@ private:
 
   void delayedClearNotification();
 
+  bool exportOnlyPlotted() const;
+
+  std::vector<std::pair<std::string, const PJ::PlotData*>> selectedNumericPlots(
+      double time_start, double time_end) const;
+
   QString generateRangeCSV(double time_start, double time_end);
 
   QString generateStatisticsCSV(double time_start, double time_end);
@@ -69,7 +77,13 @@ private:
 
   void updateButtonsState();
 
-  void saveFile(QString text);
+  QString promptFileName() const;
+
+  void saveFile(const QString& text);
+
+  bool writeStatisticsCSV(QTextStream& stream, double time_start, double time_end);
+
+  bool writeRangeCSV(QTextStream& stream, double time_start, double time_end);
 };
 
 #endif  // STATE_PUBLISHER_ZMQ_H

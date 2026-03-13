@@ -1,14 +1,11 @@
-#include <QTextStream>
 #include <QFile>
 #include <QMessageBox>
 #include <thread>
 #include <QGuiApplication>
 #include <QClipboard>
-#include <sstream>
 #include <QFileDialog>
-#include <QMessageBox>
 #include <QSettings>
-#include <QByteArray>
+#include <QTextStream>
 #include "publisher_csv.h"
 
 StatePublisherCSV::StatePublisherCSV()
@@ -95,14 +92,58 @@ void StatePublisherCSV::setEnabled(bool enabled)
 
     //--------------------
     connect(_ui->buttonStatisticsFile, &QPushButton::clicked, this, [this]() {
-      auto csv_string = generateStatisticsCSV(_start_time, _end_time);
-      this->saveFile(csv_string);
+      QString fileName = promptFileName();
+      if (fileName.isEmpty())
+      {
+        return;
+      }
+
+      QFile file(fileName);
+      if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+      {
+        QMessageBox::warning(nullptr, "Error",
+                             QString("Failed to open the file [%1]").arg(fileName));
+        return;
+      }
+
+      QTextStream stream(&file);
+      if (!writeStatisticsCSV(stream, _start_time, _end_time))
+      {
+        return;
+      }
+
+      file.close();
+
+      QSettings settings;
+      settings.setValue("StatePublisherCSV.saveDirectory", QFileInfo(fileName).absolutePath());
     });
 
     //--------------------
     connect(_ui->buttonRangeFile, &QPushButton::clicked, this, [this]() {
-      auto csv_string = generateRangeCSV(_start_time, _end_time);
-      this->saveFile(csv_string);
+      QString fileName = promptFileName();
+      if (fileName.isEmpty())
+      {
+        return;
+      }
+
+      QFile file(fileName);
+      if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+      {
+        QMessageBox::warning(nullptr, "Error",
+                             QString("Failed to open the file [%1]").arg(fileName));
+        return;
+      }
+
+      QTextStream stream(&file);
+      if (!writeRangeCSV(stream, _start_time, _end_time))
+      {
+        return;
+      }
+
+      file.close();
+
+      QSettings settings;
+      settings.setValue("StatePublisherCSV.saveDirectory", QFileInfo(fileName).absolutePath());
     });
 
     //--------------------
@@ -126,19 +167,57 @@ void StatePublisherCSV::onWindowClosed()
 
 QString StatePublisherCSV::generateStatisticsCSV(double time_start, double time_end)
 {
-  std::map<std::string, const PJ::PlotData*> ordered_map;
-  for (const auto& it : _datamap->numeric)
+  QString output;
+  QTextStream stream(&output);
+  writeStatisticsCSV(stream, time_start, time_end);
+  return output;
+}
+
+bool StatePublisherCSV::exportOnlyPlotted() const
+{
+  return _ui && _ui->checkBoxOnlyPlotted->isChecked();
+}
+
+std::vector<std::pair<std::string, const PJ::PlotData*>> StatePublisherCSV::selectedNumericPlots(
+    double time_start, double time_end) const
+{
+  std::vector<std::pair<std::string, const PJ::PlotData*>> selected_plots;
+  std::unordered_set<std::string> visible_curves;
+
+  if (exportOnlyPlotted() && _visible_curves_provider)
   {
-    ordered_map.insert({ it.first, &it.second });
+    visible_curves = _visible_curves_provider();
   }
 
-  std::stringstream out;
+  for (const auto& it : _datamap->numeric)
+  {
+    if (exportOnlyPlotted() && visible_curves.count(it.first) == 0)
+    {
+      continue;
+    }
+    if (it.second.size() == 0 || it.second.front().x > time_end || it.second.back().x < time_start)
+    {
+      continue;
+    }
+    selected_plots.push_back({ it.first, &it.second });
+  }
+
+  std::sort(selected_plots.begin(), selected_plots.end(),
+            [](const auto& a, const auto& b) { return a.first < b.first; });
+
+  return selected_plots;
+}
+
+bool StatePublisherCSV::writeStatisticsCSV(QTextStream& out, double time_start, double time_end)
+{
+  const auto ordered_plots = selectedNumericPlots(time_start, time_end);
+
   out << "Series,Current,Min,Max,Average\n";
   out << "Start Time," << time_start << "\n";
   out << "End Time," << time_end << "\n";
   out << "Current Time," << _previous_time << "\n";
 
-  for (const auto& it : ordered_map)
+  for (const auto& it : ordered_plots)
   {
     const auto& name = it.first;
     const auto& plot = *(it.second);
@@ -177,14 +256,17 @@ QString StatePublisherCSV::generateStatisticsCSV(double time_start, double time_
       count++;
       index++;
     }
-    out << name << ',';
-    out << ((current_value) ? std::to_string(current_value.value()) : "");
+    out << QString::fromStdString(name) << ',';
+    if (current_value)
+    {
+      out << QString::number(current_value.value());
+    }
     out << ',';
-    out << std::to_string(min_value) << ',';
-    out << std::to_string(max_value) << ',';
-    out << std::to_string(total / double(count)) << '\n';
+    out << QString::number(min_value) << ',';
+    out << QString::number(max_value) << ',';
+    out << QString::number(total / double(count)) << '\n';
   }
-  return QString::fromStdString(out.str());
+  return (out.status() == QTextStream::Ok);
 }
 
 bool StatePublisherCSV::getTimeRanges(double* first, double* last)
@@ -212,10 +294,8 @@ void StatePublisherCSV::updateButtonsState()
   _ui->buttonStatisticsFile->setEnabled(enable);
 }
 
-void StatePublisherCSV::saveFile(QString text)
+QString StatePublisherCSV::promptFileName() const
 {
-  // QFileDialog::getSaveFileName(nullptr, "Save as CSV file", );
-
   QSettings settings;
   QString directory_path =
       settings.value("StatePublisherCSV.saveDirectory", QDir::currentPath()).toString();
@@ -225,45 +305,54 @@ void StatePublisherCSV::saveFile(QString text)
 
   if (fileName.isEmpty())
   {
-    return;
+    return QString();
   }
   if (!fileName.endsWith(".csv"))
   {
     fileName.append(".csv");
   }
 
+  return fileName;
+}
+
+void StatePublisherCSV::saveFile(const QString& text)
+{
+  QString fileName = promptFileName();
+  if (fileName.isEmpty())
+  {
+    return;
+  }
+
   QFile file(fileName);
-  if (!file.open(QIODevice::WriteOnly))
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
   {
     QMessageBox::warning(nullptr, "Error", QString("Failed to open the file [%1]").arg(fileName));
     return;
   }
 
-  file.write(text.toUtf8());
+  QTextStream stream(&file);
+  stream << text;
   file.close();
 
-  directory_path = QFileInfo(fileName).absolutePath();
+  QSettings settings;
+  QString directory_path = QFileInfo(fileName).absolutePath();
   settings.setValue("StatePublisherCSV.saveDirectory", directory_path);
 }
 
 QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
 {
+  QString output;
+  QTextStream stream(&output);
+  writeRangeCSV(stream, time_start, time_end);
+  return output;
+}
+
+bool StatePublisherCSV::writeRangeCSV(QTextStream& out, double time_start, double time_end)
+{
   using PlotPair = std::pair<std::string, const PJ::PlotData*>;
 
-  std::vector<PlotPair> ordered_plotdata;
-
-  for (const auto& it : _datamap->numeric)
-  {
-    if (it.second.size() == 0 || it.second.front().x > time_end || it.second.back().x < time_start)
-    {
-      continue;
-    }
-    ordered_plotdata.push_back({ it.first, &it.second });
-  }
+  std::vector<PlotPair> ordered_plotdata = selectedNumericPlots(time_start, time_end);
   const size_t plot_count = ordered_plotdata.size();
-
-  std::sort(ordered_plotdata.begin(), ordered_plotdata.end(),
-            [](const PlotPair& a, const PlotPair& b) { return a.first < b.first; });
 
   // current index per plordata
   std::vector<size_t> indices(plot_count, 0);
@@ -271,12 +360,11 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
   const auto NaN = std::numeric_limits<double>::quiet_NaN();
   std::vector<double> row_values(plot_count, NaN);
 
-  QString labels;
-  labels += "__time,";
+  out << "__time,";
   for (size_t i = 0; i < plot_count; i++)
   {
-    labels += QString::fromStdString(ordered_plotdata[i].first);
-    labels += (i + 1 < plot_count) ? "," : "\n";
+    out << QString::fromStdString(ordered_plotdata[i].first);
+    out << ((i + 1 < plot_count) ? "," : "\n");
 
     const PJ::PlotData* plotdata = (ordered_plotdata[i].second);
     int index = plotdata->getIndexFromX(time_start);
@@ -288,7 +376,6 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
   }
 
   bool done = false;
-  QStringList rows = { labels };
 
   while (!done)
   {
@@ -333,19 +420,18 @@ QString StatePublisherCSV::generateRangeCSV(double time_start, double time_end)
     }
 
     // the row to append to the CSV file
-    QString row_str = QString::number(min_time, 'f', 6) + ",";
+    out << QString::number(min_time, 'f', 6) << ",";
 
     for (size_t i = 0; i < plot_count; i++)
     {
       if (!std::isnan(row_values[i]))
       {
-        row_str += QString::number(row_values[i], 'f', 9);
+        out << QString::number(row_values[i], 'f', 9);
         // value used, move to the nex index
         indices[i]++;
       }
-      row_str += (i + 1 < plot_count) ? "," : "\n";
+      out << ((i + 1 < plot_count) ? "," : "\n");
     }
-    rows.push_back(row_str);
   }
-  return rows.join("");
+  return (out.status() == QTextStream::Ok);
 }

@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>CSV Exporter</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0,0,0">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0,0,0,0">
    <item>
     <widget class="QTextBrowser" name="textBrowser">
      <property name="maximumSize">
@@ -151,7 +151,17 @@ p, li { white-space: pre-wrap; }
        </property>
       </widget>
      </item>
-    </layout>
+   </layout>
+  </item>
+   <item>
+    <widget class="QCheckBox" name="checkBoxOnlyPlotted">
+     <property name="text">
+      <string>Only plotted signals</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="Line" name="line">

@@ -605,6 +605,7 @@ void MainWindow::initializePlugins()
   for (const auto& [plugin_name, publisher] : _plugin_manager.statePublishers())
   {
     publisher->setDataMap(&_mapped_plot_data);
+    publisher->setVisibleCurvesProvider([this]() { return plottedTimeSeriesNames(); });
 
     ui->layoutPublishers->setColumnStretch(0, 1.0);
 
@@ -2371,6 +2372,19 @@ void MainWindow::forEachWidget(std::function<void(PlotWidget*, PlotDocker*, int)
 void MainWindow::forEachWidget(std::function<void(PlotWidget*)> op)
 {
   forEachWidget([&](PlotWidget* plot, PlotDocker*, int) { op(plot); });
+}
+
+std::unordered_set<std::string> MainWindow::plottedTimeSeriesNames() const
+{
+  std::unordered_set<std::string> curve_names;
+  auto self = const_cast<MainWindow*>(this);
+  self->forEachWidget([&](PlotWidget* plot) {
+    for (const auto& curve : plot->curveList())
+    {
+      curve_names.insert(curve.src_name);
+    }
+  });
+  return curve_names;
 }
 
 void MainWindow::updateTimeSlider()
